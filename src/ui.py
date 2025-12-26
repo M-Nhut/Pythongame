@@ -66,7 +66,7 @@ class Button:
 
 # -------- MAIN UI --------
 class GameUI:
-    def __init__(self, shop_client=None, size=(900, 640)):
+    def __init__(self, shop_client=None, size=(800, 380)):
         self.size = size
         self.screen = pygame.display.set_mode(size)
         pygame.display.set_caption("UI Module")
@@ -85,7 +85,7 @@ class GameUI:
 
         self.menu_bg = load_img("menu.jpg", self.size)
         self.shop_bg = load_img("shop.png", self.size)
-        self.logo = load_img("Logo_game.png", (400, 180))
+        self.logo = load_img("Logo_game.png", (320, 140))
         self.btn_img = load_img("button.png", (220, 60))
         self.btn_hover = load_img("button_hover.png", (220, 60)) or self.btn_img
         self.coin_icon = load_img("coin.png", (50, 50))
@@ -116,8 +116,8 @@ class GameUI:
         w, h = self.size
         btn_w, btn_h = 220, 60
         x = (w - btn_w) // 2
-        start_y = 240
-        gap = 86
+        start_y = 150
+        gap = 60
 
         self.buttons = [
             Button(pygame.Rect(x, start_y, btn_w, btn_h), "P L A Y", self.start_game, self.btn_img, self.btn_hover),
@@ -153,7 +153,7 @@ class GameUI:
             self.screen.fill((30, 30, 50))
 
         if self.logo:
-            rect = self.logo.get_rect(center=(self.size[0] // 2, 120))
+            rect = self.logo.get_rect(center=(self.size[0] // 2, 80))
             self.screen.blit(self.logo, rect)
 
         for b in self.buttons:
@@ -204,7 +204,7 @@ class GameUI:
             self.screen.fill((30, 30, 40))
 
         # --- COIN HUD in Shop ---
-        hud_w, hud_h = 100, 50
+        hud_w, hud_h = 100, 40
         hud_rect = pygame.Rect(10, 10, hud_w, hud_h)
 
         # làm nền mờ (semi-transparent)
@@ -233,15 +233,19 @@ class GameUI:
         owned = set(self.shop.get_owned_skins())
         equipped = self.shop.get_equipped_skin()
 
-        start_x, start_y = 200, 150
-        box_w, box_h = 150, 150
-        gap = 30
+        cols = 4                 
+        box_w, box_h = 120, 120
+        gap = 20
+
+        total_width = cols * box_w + (cols - 1) * gap
+        start_x = (self.size[0] - total_width) // 2
+        start_y = 90
 
         self.shop_buttons = []
 
         for i, skin_id in enumerate(skins):
-            row = i // 3   
-            col = i % 3
+            row = i // 4   
+            col = i % 4
 
             rect = pygame.Rect(start_x + col*(box_w+gap), start_y + row*(box_h+110), box_w, box_h)
 
@@ -344,7 +348,7 @@ class DummyShop:
             "equipped_skin": "nhanvat1",
             "unlocked_levels": [1],
         }
-        self._all_skins = ["nhanvat1", "nhanvat2", "nhanvat3", "nhanvat4", "nhanvat5", "nhanvat6"]
+        self._all_skins = ["nhanvat1", "nhanvat2", "nhanvat3", "nhanvat4"]
 
     def save_state(self):
         try:
