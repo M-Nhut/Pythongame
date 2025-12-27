@@ -5,9 +5,6 @@ import json
 import traceback
 from pathlib import Path
 
-# =========================================================
-# 1. CẤU HÌNH & KHỞI TẠO CHUNG
-# =========================================================
 pygame.init()
 
 SCREEN_WIDTH = 800
@@ -42,10 +39,6 @@ def get_paths():
     }
 
 PATHS = get_paths()
-
-# =========================================================
-# 2. CÁC CLASS HỖ TRỢ (UI, SHOP, SOUND)
-# =========================================================
 
 # --- QUẢN LÝ SHOP ---
 class ShopManager:
@@ -244,9 +237,7 @@ def draw_heart(surface, x, y, color):
     pygame.draw.polygon(surface, color, points)
     pygame.draw.circle(surface, (255, 200, 200), (x - 7, y - 7), 2)
 
-# =========================================================
-# 3. GAME OBJECTS
-# =========================================================
+
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, x, y, img_list):
         super().__init__()
@@ -517,9 +508,7 @@ class Level:
         for e in self.active_enemies: e.draw(screen, ox)
         dr("goal", self.data["goal"], (0,255,0))
 
-# =========================================================
-# 4. GAME MAIN CLASS
-# =========================================================
+
 class Game:
     def __init__(self):
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
