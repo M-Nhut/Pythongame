@@ -1,5 +1,3 @@
-# map_loader.py – Bản CHUẨN cho game Mario + Debug thông tin level
-
 import json
 import os
 import pygame
@@ -13,12 +11,18 @@ TILE_GOAL = 'G'
 TILE_PIT = '_'
 TILE_STONE = 'S'
 
-
+DEBUG = True   # test_level.py sẽ override thành False nếu cần
 def load_level_json(path):
-    if not os.path.exists(path):
-        raise FileNotFoundError(f"Level file not found: {path}")
 
-    with open(path, "r", encoding="utf-8") as f:
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+    # Ghép path tuyệt đối
+    real_path = os.path.join(project_root, path)
+
+    if not os.path.exists(real_path):
+        raise FileNotFoundError(f"Level file not found: {real_path}")
+
+    with open(real_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
     if "tile_size" not in data:
@@ -33,8 +37,8 @@ def parse_level(data):
     tile_size = data["tile_size"]
     tiles = data["tiles"]
 
-    platform_list = []
-    stone_list = []       # <-- thêm list cho S
+    platform_list = []    # <-- thêm list cho flatform
+    stone_list = []      
     pit_list = []
     coin_list = []
     enemy_list = []
@@ -51,10 +55,10 @@ def parse_level(data):
             px = x * tile_size
             py = y * tile_size
 
-            if ch == TILE_PLATFORM:
+            if ch == TILE_PLATFORM:   # <-- xử lý '#'
                 platform_list.append(pygame.Rect(px, py, tile_size, tile_size))
 
-            elif ch == TILE_STONE:           # <-- xử lý 'S'
+            elif ch == TILE_STONE:         
                 stone_list.append(pygame.Rect(px, py, tile_size, tile_size))
 
             elif ch == TILE_PIT:
@@ -82,8 +86,8 @@ def parse_level(data):
     # --------------------------
     print("\n===== LEVEL INFO =====")
     print(f"Tile size: {tile_size}")
-    print(f"Platforms (#): {len(platform_list)}")
-    print(f"Stones (S): {len(stone_list)}")        # <-- in số lượng S
+    print(f"Platforms (#): {len(platform_list)}") # <-- in số lượng #
+    print(f"Stones (S): {len(stone_list)}")        
     print(f"Pits (_): {len(pit_list)}")
 
     print(f"Coins: {len(coin_list)}")
@@ -107,8 +111,8 @@ def parse_level(data):
 
     return {
         "tile_size": tile_size,
-        "platform_list": platform_list,
-        "stone_list": stone_list,   # <-- trả về stone_list
+        "platform_list": platform_list, # <-- trả về flatform list
+        "stone_list": stone_list,   
         "pit_list": pit_list,
         "coin_list": coin_list,
         "enemy_list": enemy_list,
@@ -122,7 +126,7 @@ def parse_level(data):
 # PHẦN TEST NHIỀU LEVEL
 # --------------------------
 def test_level(index):
-    path = f"levels/level{index}.json"
+    path = os.path.join("assets", "tiles", f"level{index}.json")
     print(f"--- TEST LEVEL {index} ---")
     data = load_level_json(path)
     parse_level(data)
