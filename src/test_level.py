@@ -1,10 +1,13 @@
-# test_level.py – chạy test Level + DummyPlayer giống Mario
+import os
+import map_loader
+map_loader.DEBUG = False
+
 import pygame
 from map_loader import load_level_json, parse_level
 from level import Level
 from dummy_player import DummyPlayer
 
-SCREEN_W = 800     # màn hình nhỏ để thấy camera follow
+SCREEN_W = 800    
 SCREEN_H = 380
 
 def run_level(index):
@@ -15,7 +18,9 @@ def run_level(index):
     clock = pygame.time.Clock()
 
     # -------- LOAD LEVEL --------
-    raw = load_level_json(f"levels/level{index}.json")
+    raw = load_level_json(
+    os.path.join("assets", "tiles", f"level{index}.json")
+)
     parsed = parse_level(raw)
     level = Level(parsed, index)
 
@@ -58,6 +63,6 @@ def run_level(index):
     pygame.quit()
 
 
-# Chạy level1 mặc định
+# Chạy level1 mặc định có thể đổi level để test
 if __name__ == "__main__":
     run_level(1)
