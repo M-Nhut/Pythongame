@@ -343,7 +343,7 @@ class DummyShop:
     def __init__(self, save_file: str = "shop_state.json"):
         self.save_file = Path(save_file)
         self.state = {
-            "coins": 1000,
+            "coins": 0,
             "owned_skins": ["nhanvat1"],
             "equipped_skin": "nhanvat1",
             "unlocked_levels": [1],
@@ -404,4 +404,5 @@ class DummyShop:
 
     def is_level_unlocked(self, level: int):
         return level in self.state.get("unlocked_levels", [])
+
 
