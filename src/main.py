@@ -6,7 +6,6 @@ from gameplay import Gameplay
 pygame.init()
 SCREEN_SIZE = (800, 380) 
 screen = pygame.display.set_mode(SCREEN_SIZE)
-pygame.display.set_caption("My Game")
 clock = pygame.time.Clock()
 
 shop = DummyShop()
