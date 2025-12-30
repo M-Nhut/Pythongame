@@ -25,20 +25,12 @@ enemy_idle_img = load_img("assets/enemies/idle.png")
 
 # ----- CREATE OBJECT -----
 player = pygame.Rect(100, 200, 28, 32)
-
 coins = [Coin(200, 200, coin_imgs)]
 spike = Spike(300, 200, spike_img)
 breakblock = BreakBlock(350, 200, break_img)
 goal = GoalFlag(500, 200, goal_img)
 
 enemy = EnemyWalk(400, 200, speed=1)
-
-# ----- PLATFORM (NỀN / TƯỜNG) -----
-platforms = [
-    pygame.Rect(0, 300, 640, 40),     # nền chính
-    pygame.Rect(200, 250, 120, 20),   # platform nhỏ
-    pygame.Rect(400, 250, 100, 20)    # platform nhỏ
-]
 
 coin_count = 0
 running = True
@@ -58,10 +50,10 @@ while running:
         player.x += 2
 
     # ----- UPDATE -----
-    enemy.update(dt, platforms)
-    for c in coins:
-        c.update(dt)
+    enemy.update(dt)
+    for c in coins: c.update(dt)
 
+    # Print enemy position
     print("Enemy pos:", enemy.rect.x)
 
     # ----- COLLISION -----
@@ -73,33 +65,22 @@ while running:
 
     if player.colliderect(spike.rect):
         print("player dead")
-
+    
     if not breakblock.broken and player.colliderect(breakblock.rect):
         breakblock.broken = True
         print("Break block destroyed")
 
     if player.colliderect(goal.rect):
         print("Goal reached!")
-
     # ----- DRAW -----
     screen.fill((40, 40, 40))
-
-    # vẽ platform
-    for p in platforms:
-        pygame.draw.rect(screen, (180, 180, 180), p)
-
     enemy.draw(screen, enemy_walk_img)
-
-    for c in coins:
-        c.draw(screen)
-
+    for c in coins: c.draw(screen)
     spike.draw(screen)
     breakblock.draw(screen)
     goal.draw(screen)
-
     pygame.draw.rect(screen, (0, 200, 255), player)
 
     pygame.display.flip()
 
 pygame.quit()
-
