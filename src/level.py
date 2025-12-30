@@ -22,7 +22,7 @@ class Level:
         self.ground_center = []
         self.offset_x = 0
 
-        # PATH CHUẨN (project root)
+        # PATH (Pythongame/assets/...)
         project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         self.assets_dir = os.path.join(project_root, "assets")
 
@@ -34,12 +34,11 @@ class Level:
         self.img_stone = self._try_load(os.path.join("tiles", "stone.png"), (ts, ts))
         self.img_pit = self._try_load(os.path.join("tiles", "pit.png"), (ts, ts))
 
-        # BACKGROUND (nếu bạn có background_1.png... trong assets/tiles)
+        # BACKGROUND (assets/tiles/background_{level}.png)
         bg_name = f"background_{self.level_index}.png"
         self.img_bg = self._try_load(os.path.join("tiles", bg_name), (800, 380))
 
-
-        # ITEMS / ENEMY / GOAL IMAGES 
+        # COIN / ENEMY / GOAL 
         self.coin_frames = [
             self._try_load(os.path.join("items", "coin1.png"), (ts, ts)),
             self._try_load(os.path.join("items", "coin2.png"), (ts, ts)),
@@ -49,6 +48,7 @@ class Level:
 
         self.goal_img = self._try_load(os.path.join("items", "goal.png"), (ts, ts))
 
+        # Enemy: walk1/walk2 để animate, fallback idle
         self.enemy_walk_frames = [
             self._try_load(os.path.join("enemies", "walk1.png"), (ts, ts)),
             self._try_load(os.path.join("enemies", "walk2.png"), (ts, ts)),
@@ -66,6 +66,7 @@ class Level:
             if size:
                 img = pygame.transform.scale(img, size)
             return img
+        # Không in tiếng Việt để tránh UnicodeEncodeError trên Windows
         return None
 
     # PHÂN LOẠI GROUND TOP/CENTER
@@ -82,7 +83,6 @@ class Level:
                 self.ground_center.append(r)
             else:
                 self.ground_top.append(r)
-
     # UPDATE LOGIC
     def update(self, player):
         # Player rơi xuống hố
@@ -104,13 +104,13 @@ class Level:
                 collected.append((cx, cy))
 
         for c in collected:
-            self.coins.remove(c)
-            player.coins += 1
+            if c in self.coins:
+                self.coins.remove(c)
+                player.coins += 1
 
         # Chạm goal
         if self.goal_rect and player.rect.colliderect(self.goal_rect):
             player.on_reach_goal()
-
     # DRAW
     def draw(self, screen):
         ox = self.offset_x
@@ -151,7 +151,7 @@ class Level:
             else:
                 pygame.draw.rect(screen, (140, 140, 140), r.move(-ox, 0))
 
-        # COINS
+        # COINS (animate coin1->coin2->coin3)
         for cx, cy in self.coins:
             if self.coin_frames:
                 idx = (t // 120) % len(self.coin_frames)
@@ -160,7 +160,7 @@ class Level:
             else:
                 pygame.draw.circle(screen, (255, 215, 0), (int(cx - ox), int(cy)), ts // 4)
 
-        # ENEMIES
+        # ENEMIES (animate walk1<->walk2, fallback idle)
         for ex, ey in self.enemies:
             if self.enemy_walk_frames:
                 idx = (t // 180) % len(self.enemy_walk_frames)
@@ -177,7 +177,6 @@ class Level:
                 screen.blit(self.goal_img, (int(self.goal_rect.x - ox), int(self.goal_rect.y)))
             else:
                 pygame.draw.rect(screen, (0, 255, 0), self.goal_rect.move(-ox, 0), 3)
-
 
     # CAMERA
     def update_camera(self, player, screen_width):
