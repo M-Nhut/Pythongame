@@ -17,32 +17,30 @@ def run_level(index):
 
     clock = pygame.time.Clock()
 
-    # -------- LOAD LEVEL --------
+    # LOAD LEVEL
     raw = load_level_json(
     os.path.join("assets", "tiles", f"level{index}.json")
 )
     parsed = parse_level(raw)
     level = Level(parsed, index)
 
-
-
-    # -------- TẠO PLAYER --------
+    # TẠO PLAYER 
     player = DummyPlayer(level.spawn_point)
 
     running = True
     while running:
 
-        # -------- SỰ KIỆN --------
+        # SỰ KIỆN 
         for ev in pygame.event.get():
             if ev.type == pygame.QUIT:
                 running = False
 
-        # -------- UPDATE GAME --------
+        # UPDATE GAME 
         player.update(level)      # update player physics
         level.update(player)      # coin, pit, goal
         level.update_camera(player, SCREEN_W)  # camera follow
 
-        # -------- DRAW --------
+        # DRAW 
         screen.fill((120, 190, 255))  # background
 
         level.draw(screen)
