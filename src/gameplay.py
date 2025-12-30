@@ -10,7 +10,7 @@ class Gameplay:
         self.screen_width, self.screen_height = screen_size
         self.ui = ui_manager
         
-        self.internal_state = "SELECT" 
+        self.internal_state = "ACTION" 
         self.current_level_index = 1
         
         self.max_lives = 6
@@ -58,12 +58,13 @@ class Gameplay:
         self.is_invincible = False
         self.invincible_timer = 0
         
+        self.load_level(1)
 
     def play_sfx(self, name):
         if self.sfx.get(name): self.sfx[name].play()
 
     def play_music_file(self, filename):
-        pass
+        pass 
 
     def load_level(self, index):
         print(f"--- Loading Level {index} ---")
@@ -75,16 +76,24 @@ class Gameplay:
             parsed = parse_level(data)
             self.level = Level(parsed, index)
             
-            if self.ui and self.ui.shop:
-                current_skin = self.ui.shop.get_equipped_skin()
+            current_skin = "nhanvat1"
+            if self.ui and hasattr(self.ui, 'shop') and self.ui.shop:
+                shop_skin = self.ui.shop.get_equipped_skin()
+                if shop_skin: current_skin = shop_skin
             
+            current_coins = 0
+            if self.ui and hasattr(self.ui, 'shop') and self.ui.shop:
+                current_coins = self.ui.shop.get_coins()
+
             sx, sy = self.level.spawn_point
             self.player = Player(sx, sy, skin=current_skin)
+
+            self.player.coins = current_coins 
 
             self.player.rect.size = (20, 28) 
             self.player.rect.center = self.player.rect.center
             self.player.speed = 4 
-            self.player.coins = 0 
+            
             self.player.on_death = self.respawn_at_checkpoint 
             self.player.on_reach_goal = self.on_level_complete
 
@@ -101,70 +110,42 @@ class Gameplay:
             self.victory = False
             self.paused = False
             self.lives = self.max_lives
-            
-            self.internal_state = "ACTION" 
+            self.internal_state = "ACTION"
             
         except Exception as e:
-            print(f"Error: {e}")
-            self.internal_state = "SELECT"
+            print(f"Error loading level: {e}")
+            if self.ui: self.ui.state = "menu"
 
     def update(self, keys):
         mouse_pressed = pygame.mouse.get_pressed()[0]
         is_click = mouse_pressed and not self.mouse_pressed_prev
         self.mouse_pressed_prev = mouse_pressed
         mouse_pos = pygame.mouse.get_pos()
-
-        if self.internal_state == "SELECT":
-            self.update_level_select(is_click, mouse_pos)
-        elif self.internal_state == "ACTION":
-            self.update_game_action(keys, is_click, mouse_pos)
-
-    def update_level_select(self, is_click, mouse_pos):
-        cols = 3
-        rows = 2
-        btn_w, btn_h = 140, 90
-        gap = 30
         
-        grid_width = cols * btn_w + (cols - 1) * gap
-        grid_height = rows * btn_h + (rows - 1) * gap
-        
-        start_x = (self.screen_width - grid_width) // 2
-        start_y = (self.screen_height - grid_height) // 2 + 20 
-        
-        for i in range(1, 7): 
-            r, c = (i - 1) // cols, (i - 1) % cols
-            rect = pygame.Rect(start_x + c * (btn_w + gap), start_y + r * (btn_h + gap), btn_w, btn_h)
-            
-            is_unlocked = False
-            if self.ui and self.ui.shop: 
-                is_unlocked = self.ui.shop.is_level_unlocked(i)
-            
-            if is_unlocked and rect.collidepoint(mouse_pos) and is_click:
-                self.load_level(i)
-
-        rect_back = pygame.Rect(20, 20, 80, 40)
-        
-        if rect_back.collidepoint(mouse_pos) and is_click:
-            if self.ui:
-                self.ui.state = "menu"
+        self.update_game_action(keys, is_click, mouse_pos)
 
     def update_game_action(self, keys, is_click, mouse_pos):
         if not self.game_over and not self.victory:
             if keys[pygame.K_ESCAPE] and not self.paused:
                 self.paused = True
             
+            pause_btn_rect = pygame.Rect(self.screen_width - 120, 10, 100, 36)
+            if is_click and pause_btn_rect.collidepoint(mouse_pos) and not self.paused:
+                self.paused = True
+            
             if self.paused:
-                btn_w, btn_h = 200, 50
-                center_x, center_y = self.screen_width // 2, self.screen_height // 2
+                box_w, box_h = 360, 220
+                box_left = self.screen_width // 2 - box_w // 2
+                box_top = self.screen_height // 2 - box_h // 2
                 
-                rect_resume = pygame.Rect(center_x - btn_w//2, center_y - 30, btn_w, btn_h)
-                rect_menu = pygame.Rect(center_x - btn_w//2, center_y + 40, btn_w, btn_h)
+                rect_resume = pygame.Rect(box_left + 40, box_top + 90, box_w - 80, 44)
+                rect_menu = pygame.Rect(box_left + 40, box_top + 148, box_w - 80, 44)
 
                 if is_click:
                     if rect_resume.collidepoint(mouse_pos):
                         self.paused = False
                     elif rect_menu.collidepoint(mouse_pos):
-                        self.internal_state = "SELECT"
+                        if self.ui: self.ui.state = "menu"
                 return 
 
         if self.game_over or self.victory:
@@ -179,13 +160,14 @@ class Gameplay:
                     if self.victory and self.current_level_index < 6:
                         self.load_level(self.current_level_index + 1)
                     else:
-                        self.load_level(self.current_level_index)
+                        self.load_level(1) 
                 
                 elif rect_bot.collidepoint(mouse_pos):
-                    self.internal_state = "SELECT"
+                    if self.ui: self.ui.state = "menu"
             return
 
-        if self.ui and self.ui.shop:
+
+        if self.ui and hasattr(self.ui, 'shop') and self.ui.shop:
             shop_skin = self.ui.shop.get_equipped_skin()
             if shop_skin and self.player.skin != shop_skin:
                 self.player.skin = shop_skin
@@ -200,13 +182,12 @@ class Gameplay:
         
         if self.player.rect.topleft == self.level.spawn_point and self.lives < self.max_lives: return 
 
+
         for i, enemy in enumerate(self.active_enemies):
             if isinstance(enemy, EnemyDead):
                 enemy.update(1)
                 continue 
-
             self.move_enemy_smart(enemy, self.level.all_solids, self.pits)
-            
             if self.player.rect.colliderect(enemy.rect):
                 if self.player.vel_y > 0 and self.player.rect.bottom < enemy.rect.centery + 15:
                     corpse = EnemyDead(enemy.rect.x, enemy.rect.y)
@@ -226,58 +207,15 @@ class Gameplay:
                 self.take_damage()
 
         if self.player.coins > old_coin:
-            if self.ui and self.ui.shop: self.ui.shop.state["coins"] += (self.player.coins - old_coin)
+            if self.ui and self.ui.shop: 
+                diff = self.player.coins - old_coin
+                self.ui.shop.state["coins"] += diff
             self.play_sfx("coin") 
 
         self.level.update_camera(self.player, self.screen_width)
 
     def draw(self, screen):
-        if self.internal_state == "SELECT":
-            self.draw_level_select(screen)
-        elif self.internal_state == "ACTION":
-            self.draw_game_action(screen)
-
-    def draw_level_select(self, screen):
-        if self.ui and self.ui.menu_bg: screen.blit(self.ui.menu_bg, (0, 0))
-        else: screen.fill((40, 40, 60))
-        
-        title = self.font_big.render("SELECT LEVEL", True, (255, 255, 255))
-        screen.blit(title, (self.screen_width//2 - title.get_width()//2, 30))
-
-        cols = 3
-        rows = 2
-        btn_w, btn_h = 140, 90 
-        gap = 30
-        grid_w = cols * btn_w + (cols - 1) * gap
-        grid_h = rows * btn_h + (rows - 1) * gap
-        
-        start_x = (self.screen_width - grid_w) // 2
-        start_y = (self.screen_height - grid_h) // 2 + 20
-        
-        mouse_pos = pygame.mouse.get_pos()
-        
-        for i in range(1, 7):
-            r, c = (i - 1) // cols, (i - 1) % cols
-            rect = pygame.Rect(start_x + c * (btn_w + gap), start_y + r * (btn_h + gap), btn_w, btn_h)
-            is_unlocked = self.ui.shop.is_level_unlocked(i) if (self.ui and self.ui.shop) else False
-            
-            color = (100, 200, 100) if is_unlocked else (80, 80, 80)
-            if is_unlocked and rect.collidepoint(mouse_pos): color = (120, 220, 120)
-            
-            pygame.draw.rect(screen, color, rect, border_radius=12)
-            pygame.draw.rect(screen, (30, 30, 30), rect, width=3, border_radius=12)
-            
-            txt = self.font_big.render(f"{i}", True, (255, 255, 255) if is_unlocked else (150, 150, 150))
-            screen.blit(txt, txt.get_rect(center=rect.center))
-
-        rect_back = pygame.Rect(20, 20, 80, 40)
-        col_back = (180, 80, 80)
-        if rect_back.collidepoint(mouse_pos): col_back = (200, 100, 100)
-        
-        pygame.draw.rect(screen, col_back, rect_back, border_radius=8)
-        pygame.draw.rect(screen, (200, 200, 200), rect_back, width=2, border_radius=8)
-        lbl_back = self.font.render("Back", True, (255, 255, 255))
-        screen.blit(lbl_back, lbl_back.get_rect(center=rect_back.center))
+        self.draw_game_action(screen)
 
     def draw_game_action(self, screen):
         if not self.level: return
@@ -291,21 +229,15 @@ class Gameplay:
         for enemy in self.active_enemies:
             img = self.level.enemy_walk_frames[0] if self.level.enemy_walk_frames else None
             draw_pos = (enemy.rect.x - cam_x, enemy.rect.y)
-            
             if img:
-                if hasattr(enemy, 'smart_dir') and enemy.smart_dir == -1: 
-                    img = pygame.transform.flip(img, True, False)
-                
+                if hasattr(enemy, 'smart_dir') and enemy.smart_dir == -1: img = pygame.transform.flip(img, True, False)
                 if isinstance(enemy, EnemyDead):
                     dead_img = pygame.transform.scale(img, (img.get_width(), img.get_height() // 2))
                     screen.blit(dead_img, (draw_pos[0], draw_pos[1] + img.get_height() // 2))
                 else:
                     screen.blit(img, draw_pos)
             else: 
-                if isinstance(enemy, EnemyDead):
-                    pygame.draw.rect(screen, (100, 50, 50), (*draw_pos, 32, 16)) 
-                else:
-                    pygame.draw.rect(screen, (200, 50, 50), (*draw_pos, 32, 32))
+                pygame.draw.rect(screen, (200, 50, 50), (*draw_pos, 32, 32))
 
         should_draw = True
         if self.is_invincible and (pygame.time.get_ticks() // 100) % 2 == 0: should_draw = False
@@ -317,66 +249,46 @@ class Gameplay:
             screen.blit(img, (self.player.rect.x - cam_x + off_x, self.player.rect.y + off_y - 8))
 
         for i in range(self.lives): screen.blit(self.heart_surf, (10 + i * 35, self.screen_height - 40))
-        screen.blit(self.font.render(f"Coins: {self.player.coins}", True, (255, 215, 0)), (10, 10))
         
-        overlay_needed = self.paused or self.game_over or self.victory
-        if overlay_needed:
+        if self.ui:
+            self.ui.draw_hud() 
+            if self.paused:
+                self.ui.draw_pause()
+
+        if self.game_over or self.victory:
             overlay = pygame.Surface((self.screen_width, self.screen_height), pygame.SRCALPHA)
             overlay.fill((0, 0, 0, 180))
             screen.blit(overlay, (0, 0))
             
             center_x, center_y = self.screen_width // 2, self.screen_height // 2
+            txt = self.font_big.render("GAME OVER" if self.game_over else "VICTORY!", True, (255, 50, 50) if self.game_over else (50, 255, 50))
+            screen.blit(txt, txt.get_rect(center=(center_x, center_y - 80)))
+            
             mouse_pos = pygame.mouse.get_pos()
             btn_w, btn_h = 200, 50
+            
+            rect_top = pygame.Rect(center_x - btn_w//2, center_y - 30, btn_w, btn_h)
+            top_col = (100, 200, 100)
+            if rect_top.collidepoint(mouse_pos): top_col = (120, 220, 120)
+            pygame.draw.rect(screen, top_col, rect_top, border_radius=10)
+            pygame.draw.rect(screen, (220, 220, 220), rect_top, width=2, border_radius=10)
+            
+            top_text = "Play Again"
+            if self.victory: top_text = "Play Again" 
+            
+            lbl_top = self.font.render(top_text, True, (255, 255, 255))
+            screen.blit(lbl_top, lbl_top.get_rect(center=rect_top.center))
 
-            if self.paused and not (self.game_over or self.victory):
-                txt = self.font_big.render("PAUSED", True, (255, 255, 255))
-                screen.blit(txt, txt.get_rect(center=(center_x, center_y - 80)))
-                
-                rect_resume = pygame.Rect(center_x - btn_w//2, center_y - 30, btn_w, btn_h)
-                res_col = (100, 200, 100)
-                if rect_resume.collidepoint(mouse_pos): res_col = (120, 220, 120)
-                pygame.draw.rect(screen, res_col, rect_resume, border_radius=10)
-                pygame.draw.rect(screen, (220, 220, 220), rect_resume, width=2, border_radius=10)
-                lbl_res = self.font.render("Resume", True, (255, 255, 255))
-                screen.blit(lbl_res, lbl_res.get_rect(center=rect_resume.center))
-
-                rect_menu = pygame.Rect(center_x - btn_w//2, center_y + 40, btn_w, btn_h)
-                menu_col = (180, 80, 80)
-                if rect_menu.collidepoint(mouse_pos): menu_col = (200, 100, 100)
-                pygame.draw.rect(screen, menu_col, rect_menu, border_radius=10)
-                pygame.draw.rect(screen, (220, 220, 220), rect_menu, width=2, border_radius=10)
-                lbl_menu = self.font.render("Menu", True, (255, 255, 255))
-                screen.blit(lbl_menu, lbl_menu.get_rect(center=rect_menu.center))
-
-            elif self.game_over or self.victory:
-                txt = self.font_big.render("GAME OVER" if self.game_over else "VICTORY!", True, (255, 50, 50) if self.game_over else (50, 255, 50))
-                screen.blit(txt, txt.get_rect(center=(center_x, center_y - 80)))
-                
-                rect_top = pygame.Rect(center_x - btn_w//2, center_y - 30, btn_w, btn_h)
-                top_text = "Play Again"
-                top_col = (100, 200, 100)
-                if self.victory and self.current_level_index < 6:
-                    top_text = "Next Level >>"
-                    top_col = (50, 150, 255)
-                if rect_top.collidepoint(mouse_pos): 
-                    top_col = (min(255, top_col[0]+20), min(255, top_col[1]+20), min(255, top_col[2]+20))
-                pygame.draw.rect(screen, top_col, rect_top, border_radius=10)
-                pygame.draw.rect(screen, (220, 220, 220), rect_top, width=2, border_radius=10)
-                lbl_top = self.font.render(top_text, True, (255, 255, 255))
-                screen.blit(lbl_top, lbl_top.get_rect(center=rect_top.center))
-
-                rect_bot = pygame.Rect(center_x - btn_w//2, center_y + 40, btn_w, btn_h)
-                bot_col = (180, 80, 80)
-                if rect_bot.collidepoint(mouse_pos): bot_col = (200, 100, 100)
-                pygame.draw.rect(screen, bot_col, rect_bot, border_radius=10)
-                pygame.draw.rect(screen, (220, 220, 220), rect_bot, width=2, border_radius=10)
-                lbl_bot = self.font.render("Select Level", True, (255, 255, 255))
-                screen.blit(lbl_bot, lbl_bot.get_rect(center=rect_bot.center))
+            rect_bot = pygame.Rect(center_x - btn_w//2, center_y + 40, btn_w, btn_h)
+            bot_col = (180, 80, 80)
+            if rect_bot.collidepoint(mouse_pos): bot_col = (200, 100, 100)
+            pygame.draw.rect(screen, bot_col, rect_bot, border_radius=10)
+            pygame.draw.rect(screen, (220, 220, 220), rect_bot, width=2, border_radius=10)
+            lbl_bot = self.font.render("Exit to Menu", True, (255, 255, 255))
+            screen.blit(lbl_bot, lbl_bot.get_rect(center=rect_bot.center))
 
     def respawn_at_checkpoint(self):
         self.lives -= 1
-        
         if self.lives > 0:
             self.play_sfx("die") 
             self.player.rect.topleft = self.level.spawn_point
@@ -392,7 +304,6 @@ class Gameplay:
     def take_damage(self):
         if self.is_invincible: return 
         self.lives -= 1
-        
         if self.lives > 0: 
             self.play_sfx("hit") 
             self.is_invincible = True
@@ -402,10 +313,15 @@ class Gameplay:
             self.game_over = True
 
     def on_level_complete(self):
-        print("Level Complete!")
+        print(f"Level {self.current_level_index} Complete!")
         self.play_sfx("win") 
-        if self.ui and self.ui.shop: self.ui.shop.unlock_level(self.current_level_index + 1)
-        self.victory = True 
+        if self.ui and hasattr(self.ui, 'shop') and self.ui.shop: 
+            self.ui.shop.unlock_level(self.current_level_index + 1)
+        
+        if self.current_level_index < 6:
+            self.load_level(self.current_level_index + 1)
+        else:
+            self.victory = True 
 
     def update_player_physics(self, keys):
         p = self.player
@@ -454,16 +370,6 @@ class Gameplay:
     def move_enemy_smart(self, e, solids, spikes):
         if not hasattr(e, 'smart_dir'): e.smart_dir = 1
         if not hasattr(e, 'smart_speed'): e.smart_speed = 1 
-        
-        speed_delay = 1 
-        
-        if not hasattr(e, 'move_timer'): e.move_timer = 0
-        e.move_timer += 1
-        
-        if e.move_timer < speed_delay:
-            return 
-        
-        e.move_timer = 0 
         
         nx = e.rect.x + (e.smart_dir * e.smart_speed)
         tr = e.rect.copy()
