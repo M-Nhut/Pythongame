@@ -10,7 +10,7 @@ pygame.display.set_caption("TEST CHARACTER - Nhom26")
 clock = pygame.time.Clock()
 
 # ĐỔI TÊN SKIN Ở ĐÂY ĐỂ TEST TỪNG NHÂN VẬT
-player = Player(400, 500, skin="nhanvat3")
+player = Player(400, 500, skin="Aqua")
 
 running = True
 while running:

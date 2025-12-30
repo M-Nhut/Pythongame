@@ -4,7 +4,7 @@ from sprite import SpriteSheet
 from animation import Animation
 
 class Player:
-    def __init__(self, x, y, skin="nhanvat1"):
+    def __init__(self, x, y, skin="Aqua"):
         self.rect = pygame.Rect(x, y, 48, 48)
         self.vel_x = 0
         self.vel_y = 0
