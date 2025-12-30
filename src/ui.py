@@ -344,11 +344,11 @@ class DummyShop:
         self.save_file = Path(save_file)
         self.state = {
             "coins": 0,
-            "owned_skins": ["nhanvat1"],
-            "equipped_skin": "nhanvat1",
+            "owned_skins": ["Warchief"],
+            "equipped_skin": "Warchief",
             "unlocked_levels": [1],
         }
-        self._all_skins = ["nhanvat1", "nhanvat2", "nhanvat3", "nhanvat4"]
+        self._all_skins = ["Warchief", "Bunny", "Ninja", "Aqua"]
 
     def save_state(self):
         try:
