@@ -18,54 +18,57 @@ class Level:
         self.raw_tiles = parsed_data.get("raw_tiles", [])
 
         self.all_solids = self.platforms + self.stone_list
-
         self.ground_top = []
         self.ground_center = []
         self.offset_x = 0
 
+        # PATH CHUẨN (project root)
         project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         self.assets_dir = os.path.join(project_root, "assets")
 
         ts = self.tile_size
 
-        # -----------------------------
-        # LOAD TILE IMAGES
-        # -----------------------------
-        self.img_ground_top = self._try_load("ground_top.png", (ts, ts))
-        self.img_ground_center = self._try_load("ground_center.png", (ts, ts))
-        self.img_stone = self._try_load("stone.png", (ts, ts))
-        self.img_pit = self._try_load("pit.png", (ts, ts))
+        # TILE IMAGES (assets/tiles)
+        self.img_ground_top = self._try_load(os.path.join("tiles", "ground_top.png"), (ts, ts))
+        self.img_ground_center = self._try_load(os.path.join("tiles", "ground_center.png"), (ts, ts))
+        self.img_stone = self._try_load(os.path.join("tiles", "stone.png"), (ts, ts))
+        self.img_pit = self._try_load(os.path.join("tiles", "pit.png"), (ts, ts))
 
-        # -----------------------------
-        # LOAD BACKGROUND
-        # -----------------------------
+        # BACKGROUND (nếu bạn có background_1.png... trong assets/tiles)
         bg_name = f"background_{self.level_index}.png"
-        self.img_bg = self._try_load(bg_name, (800, 380))
+        self.img_bg = self._try_load(os.path.join("tiles", bg_name), (800, 380))
 
-        # -----------------------------
-        # PHÂN LOẠI GROUND
-        # -----------------------------
+
+        # ITEMS / ENEMY / GOAL IMAGES 
+        self.coin_frames = [
+            self._try_load(os.path.join("items", "coin1.png"), (ts, ts)),
+            self._try_load(os.path.join("items", "coin2.png"), (ts, ts)),
+            self._try_load(os.path.join("items", "coin3.png"), (ts, ts)),
+        ]
+        self.coin_frames = [f for f in self.coin_frames if f is not None]
+
+        self.goal_img = self._try_load(os.path.join("items", "goal.png"), (ts, ts))
+
+        self.enemy_walk_frames = [
+            self._try_load(os.path.join("enemies", "walk1.png"), (ts, ts)),
+            self._try_load(os.path.join("enemies", "walk2.png"), (ts, ts)),
+        ]
+        self.enemy_walk_frames = [f for f in self.enemy_walk_frames if f is not None]
+        self.enemy_idle_img = self._try_load(os.path.join("enemies", "idle.png"), (ts, ts))
+
         self._classify_ground_tiles()
 
-    # LOAD IMAGE 
-    def _try_load(self, name, size=None):
-        candidates = [
-            os.path.join(self.assets_dir, "tiles", name),
-            os.path.join(self.assets_dir, name),
-        ]
-
-        for path in candidates:
-            if os.path.exists(path):
-                img = pygame.image.load(path).convert_alpha()
-                if size:
-                    img = pygame.transform.scale(img, size)
-                return img
-
-        print(f"[Warning] Missing asset: {name}")
+    # LOAD IMAGE (từ assets/)
+    def _try_load(self, rel_path, size=None):
+        path = os.path.join(self.assets_dir, rel_path)
+        if os.path.exists(path):
+            img = pygame.image.load(path).convert_alpha()
+            if size:
+                img = pygame.transform.scale(img, size)
+            return img
         return None
 
-    # PHÂN LOẠI GROUND TOP / CENTER
-
+    # PHÂN LOẠI GROUND TOP/CENTER
     def _classify_ground_tiles(self):
         ts = self.tile_size
         platform_positions = {(r.x, r.y) for r in self.platforms}
@@ -80,6 +83,7 @@ class Level:
             else:
                 self.ground_top.append(r)
 
+    # UPDATE LOGIC
     def update(self, player):
         # Player rơi xuống hố
         for pit in self.pits:
@@ -107,80 +111,73 @@ class Level:
         if self.goal_rect and player.rect.colliderect(self.goal_rect):
             player.on_reach_goal()
 
-  
+    # DRAW
     def draw(self, screen):
         ox = self.offset_x
         ts = self.tile_size
+        t = pygame.time.get_ticks()
 
-        # Background
+        # BACKGROUND
         if self.img_bg:
             screen.blit(self.img_bg, (0, 0))
         else:
             screen.fill((120, 190, 255))
 
-        # Pits
+        # PITS
         for r in self.pits:
             if self.img_pit:
                 screen.blit(self.img_pit, (r.x - ox, r.y))
             else:
                 pygame.draw.rect(screen, (0, 0, 0), r.move(-ox, 0))
 
-        # Ground top
+        # GROUND TOP
         for r in self.ground_top:
             if self.img_ground_top:
                 screen.blit(self.img_ground_top, (r.x - ox, r.y))
             else:
                 pygame.draw.rect(screen, (100, 180, 60), r.move(-ox, 0))
 
-        # Ground center
+        # GROUND CENTER
         for r in self.ground_center:
             if self.img_ground_center:
                 screen.blit(self.img_ground_center, (r.x - ox, r.y))
             else:
                 pygame.draw.rect(screen, (120, 70, 20), r.move(-ox, 0))
 
-        # Stone
+        # STONE
         for r in self.stone_list:
             if self.img_stone:
                 screen.blit(self.img_stone, (r.x - ox, r.y))
             else:
                 pygame.draw.rect(screen, (140, 140, 140), r.move(-ox, 0))
 
-        # Coins
+        # COINS
         for cx, cy in self.coins:
-            pygame.draw.circle(
-                screen, (255, 215, 0),
-                (int(cx - ox), int(cy)),
-                ts // 4
-            )
+            if self.coin_frames:
+                idx = (t // 120) % len(self.coin_frames)
+                img = self.coin_frames[idx]
+                screen.blit(img, (int(cx - ox - ts // 2), int(cy - ts // 2)))
+            else:
+                pygame.draw.circle(screen, (255, 215, 0), (int(cx - ox), int(cy)), ts // 4)
 
-        # Enemies (placeholder)
+        # ENEMIES
         for ex, ey in self.enemies:
-            pygame.draw.rect(
-                screen, (200, 40, 40),
-                pygame.Rect(ex - ox, ey, ts, ts)
-            )
+            if self.enemy_walk_frames:
+                idx = (t // 180) % len(self.enemy_walk_frames)
+                img = self.enemy_walk_frames[idx]
+                screen.blit(img, (int(ex - ox), int(ey)))
+            elif self.enemy_idle_img:
+                screen.blit(self.enemy_idle_img, (int(ex - ox), int(ey)))
+            else:
+                pygame.draw.rect(screen, (200, 40, 40), pygame.Rect(ex - ox, ey, ts, ts))
 
-        # Spawn
-        if self.spawn_point:
-            sx, sy = self.spawn_point
-            pygame.draw.rect(
-                screen, (40, 200, 60),
-                pygame.Rect(sx - ox, sy, ts, ts)
-            )
-
-        # Goal
+        # GOAL
         if self.goal_rect:
-            pygame.draw.rect(
-                screen, (0, 255, 0),
-                pygame.Rect(
-                    self.goal_rect.x - ox,
-                    self.goal_rect.y,
-                    self.goal_rect.width,
-                    self.goal_rect.height
-                ),
-                3
-            )
+            if self.goal_img:
+                screen.blit(self.goal_img, (int(self.goal_rect.x - ox), int(self.goal_rect.y)))
+            else:
+                pygame.draw.rect(screen, (0, 255, 0), self.goal_rect.move(-ox, 0), 3)
+
 
     # CAMERA
     def update_camera(self, player, screen_width):
