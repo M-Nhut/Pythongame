@@ -76,7 +76,7 @@ class Gameplay:
             parsed = parse_level(data)
             self.level = Level(parsed, index)
             
-            current_skin = "nhanvat1"
+            current_skin = "Warchief"
             if self.ui and hasattr(self.ui, 'shop') and self.ui.shop:
                 shop_skin = self.ui.shop.get_equipped_skin()
                 if shop_skin: current_skin = shop_skin
