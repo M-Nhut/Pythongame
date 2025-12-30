@@ -75,9 +75,8 @@ class Gameplay:
             parsed = parse_level(data)
             self.level = Level(parsed, index)
             
-            current_skin = "nhanvat1"
             if self.ui and self.ui.shop:
-                current_skin = self.ui.shop.get_equipped_skin() or "nhanvat1"
+                current_skin = self.ui.shop.get_equipped_skin()
             
             sx, sy = self.level.spawn_point
             self.player = Player(sx, sy, skin=current_skin)
