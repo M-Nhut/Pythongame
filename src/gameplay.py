@@ -58,6 +58,7 @@ class Gameplay:
         self.is_invincible = False
         self.invincible_timer = 0
         
+        
         self.load_level(1)
 
     def play_sfx(self, name):
@@ -75,6 +76,7 @@ class Gameplay:
             data = load_level_json(path)
             parsed = parse_level(data)
             self.level = Level(parsed, index)
+            
             
             current_skin = "Warchief"
             if self.ui and hasattr(self.ui, 'shop') and self.ui.shop:
@@ -166,7 +168,6 @@ class Gameplay:
                     if self.ui: self.ui.state = "menu"
             return
 
-
         if self.ui and hasattr(self.ui, 'shop') and self.ui.shop:
             shop_skin = self.ui.shop.get_equipped_skin()
             if shop_skin and self.player.skin != shop_skin:
@@ -181,7 +182,6 @@ class Gameplay:
         self.update_player_physics(keys)
         
         if self.player.rect.topleft == self.level.spawn_point and self.lives < self.max_lives: return 
-
 
         for i, enemy in enumerate(self.active_enemies):
             if isinstance(enemy, EnemyDead):
@@ -206,10 +206,12 @@ class Gameplay:
                 self.player.on_ground = False
                 self.take_damage()
 
+        
         if self.player.coins > old_coin:
             if self.ui and self.ui.shop: 
                 diff = self.player.coins - old_coin
                 self.ui.shop.state["coins"] += diff
+                self.ui.shop.save_state()  
             self.play_sfx("coin") 
 
         self.level.update_camera(self.player, self.screen_width)
