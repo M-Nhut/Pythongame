@@ -220,7 +220,7 @@ class GameUI:
         
         # Back button
         back_btn = Button(
-            pygame.Rect(self.size[0] // 2 - 100, self.size[1] - 70, 200, 50),
+            pygame.Rect(self.size[0] // 2 - 100, self.size[1] - 40, 200, 45),
             "Back to Menu",
             self.back_to_menu,
             bg_color=(180, 80, 80)
