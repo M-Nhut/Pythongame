@@ -49,6 +49,11 @@ while running:
     elif ui.state == "playing":
         if previous_ui_state != "playing":
             game.internal_state = "SELECT"
+            if previous_ui_state == "level_select" and hasattr(ui, 'selected_level'):
+                game.load_level(ui.selected_level)
+                game.lives = game.max_lives
+                game.game_over = False
+                game.victory = False
             
         if keys[pygame.K_ESCAPE]:
             ui.state = "pause"

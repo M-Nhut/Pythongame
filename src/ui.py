@@ -110,6 +110,8 @@ class GameUI:
         self._pause_buttons: List[Button] = []
 
         self.shop_buttons: List[Button] = []
+        self.level_select_buttons: List[Button] = []
+        self.selected_level = 1
 
 # -------- MAIN BUTTON --------
     def _create_main_menu(self):
@@ -120,10 +122,14 @@ class GameUI:
         gap = 60
 
         self.buttons = [
-            Button(pygame.Rect(x, start_y, btn_w, btn_h), "P L A Y", self.start_game, self.btn_img, self.btn_hover),
+            Button(pygame.Rect(x, start_y, btn_w, btn_h), "P L A Y", self.open_level_select, self.btn_img, self.btn_hover),
             Button(pygame.Rect(x, start_y + gap, btn_w, btn_h), "S H O P", self.open_shop, self.btn_img, self.btn_hover),
             Button(pygame.Rect(x, start_y + 2 * gap, btn_w, btn_h), "Q U I T", self.quit, self.btn_img, self.btn_hover),
         ]
+
+    def open_level_select(self):
+        print("[UI] open_level_select")
+        self.state = "level_select"
 
     def start_game(self):
         print("[UI] start_game")
@@ -159,6 +165,79 @@ class GameUI:
         for b in self.buttons:
             b.draw(self.screen)
 
+    # -------- DRAW LEVEL SELECT --------
+    def draw_level_select(self):
+        if self.menu_bg:
+            self.screen.blit(self.menu_bg, (0, 0))
+        else:
+            self.screen.fill((30, 30, 50))
+
+        # Title
+        title = BIGFONT.render("SELECT LEVEL", True, (255, 255, 255))
+        self.screen.blit(title, title.get_rect(center=(self.size[0] // 2, 40)))
+
+        # Lấy danh sách màn đã mở khóa
+        unlocked_levels = self.shop.state.get("unlocked_levels", [1]) if self.shop else [1]
+        
+        # Tạo grid các level buttons
+        cols = 3
+        box_w, box_h = 100, 100
+        gap = 30
+        start_x = (self.size[0] - (cols * box_w + (cols - 1) * gap)) // 2
+        start_y = 100
+
+        self.level_select_buttons = []
+        
+        for i in range(1, 7):  # Level 1-6
+            row = (i - 1) // cols
+            col = (i - 1) % cols
+            
+            x = start_x + col * (box_w + gap)
+            y = start_y + row * (box_h + gap)
+            rect = pygame.Rect(x, y, box_w, box_h)
+            
+            is_unlocked = i in unlocked_levels
+            
+            # Màu sắc
+            if is_unlocked:
+                bg_color = (100, 180, 100)
+                text_color = (255, 255, 255)
+            else:
+                bg_color = (80, 80, 80)
+                text_color = (150, 150, 150)
+            
+            # Vẽ box
+            pygame.draw.rect(self.screen, bg_color, rect, border_radius=10)
+            pygame.draw.rect(self.screen, (255, 255, 255), rect, width=3, border_radius=10)
+            
+            # Text
+            level_text = BIGFONT.render(str(i), True, text_color)
+            self.screen.blit(level_text, level_text.get_rect(center=rect.center))
+            
+            # Vẽ icon khóa nếu chưa mở
+            if not is_unlocked:
+                lock_text = FONT.render("🔒", True, (200, 200, 200))
+                self.screen.blit(lock_text, (rect.centerx - 10, rect.centery + 20))
+            
+            # Tạo button nếu unlocked
+            if is_unlocked:
+                btn = Button(rect, "", lambda lv=i: self._start_level(lv), bg_color=bg_color)
+                self.level_select_buttons.append(btn)
+        
+        # Back button
+        back_btn = Button(
+            pygame.Rect(self.size[0] // 2 - 100, self.size[1] - 70, 200, 50),
+            "Back to Menu",
+            self.back_to_menu,
+            bg_color=(180, 80, 80)
+        )
+        back_btn.draw(self.screen)
+        self.level_select_buttons.append(back_btn)
+
+    def _start_level(self, level_num):
+        print(f"[UI] Starting level {level_num}")
+        self.selected_level = level_num
+        self.state = "playing"
  
 # -------- DRAW PAUSE--------
     def draw_pause(self):
@@ -321,6 +400,13 @@ class GameUI:
                 for b in self.buttons:
                     b.handle_event(event)
 
+            elif self.state == "level_select":
+                for b in list(self.level_select_buttons):
+                    b.handle_event(event)
+                
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                    self.back_to_menu()
+
             elif self.state == "playing":
                 self.pause_button.handle_event(event)
 
@@ -404,5 +490,3 @@ class DummyShop:
 
     def is_level_unlocked(self, level: int):
         return level in self.state.get("unlocked_levels", [])
-
-

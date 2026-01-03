@@ -159,13 +159,24 @@ class Gameplay:
             
             if is_click:
                 if rect_top.collidepoint(mouse_pos):
-                    if self.victory and self.current_level_index < 6:
-                        self.load_level(self.current_level_index + 1)
+                    if self.victory:
+                        # Kiểm tra xem có level tiếp theo không
+                        next_level = self.current_level_index + 1
+                        if next_level <= 6 and self.ui and self.ui.shop:
+                            if self.ui.shop.is_level_unlocked(next_level):
+                                self.load_level(next_level)
+                            else:
+                                print(f"Level {next_level} chưa mở khóa!")
+                                if self.ui: self.ui.state = "level_select"
+                        else:
+                            # Đã hoàn thành tất cả level
+                            if self.ui: self.ui.state = "level_select"
                     else:
-                        self.load_level(1) 
+                        # Game over - chơi lại level hiện tại
+                        self.load_level(self.current_level_index) 
                 
                 elif rect_bot.collidepoint(mouse_pos):
-                    if self.ui: self.ui.state = "menu"
+                    if self.ui: self.ui.state = "level_select"
             return
 
         if self.ui and hasattr(self.ui, 'shop') and self.ui.shop:
@@ -276,7 +287,13 @@ class Gameplay:
             pygame.draw.rect(screen, (220, 220, 220), rect_top, width=2, border_radius=10)
             
             top_text = "Play Again"
-            if self.victory: top_text = "Play Again" 
+            if self.victory:
+                # Kiểm tra xem còn level tiếp theo không
+                next_level = self.current_level_index + 1
+                if next_level <= 6 and self.ui and self.ui.shop and self.ui.shop.is_level_unlocked(next_level):
+                    top_text = "Next Level"
+                else:
+                    top_text = "Level Select" 
             
             lbl_top = self.font.render(top_text, True, (255, 255, 255))
             screen.blit(lbl_top, lbl_top.get_rect(center=rect_top.center))
@@ -286,7 +303,7 @@ class Gameplay:
             if rect_bot.collidepoint(mouse_pos): bot_col = (200, 100, 100)
             pygame.draw.rect(screen, bot_col, rect_bot, border_radius=10)
             pygame.draw.rect(screen, (220, 220, 220), rect_bot, width=2, border_radius=10)
-            lbl_bot = self.font.render("Exit to Menu", True, (255, 255, 255))
+            lbl_bot = self.font.render("Level Select", True, (255, 255, 255))
             screen.blit(lbl_bot, lbl_bot.get_rect(center=rect_bot.center))
 
     def respawn_at_checkpoint(self):
@@ -317,13 +334,18 @@ class Gameplay:
     def on_level_complete(self):
         print(f"Level {self.current_level_index} Complete!")
         self.play_sfx("win") 
-        if self.ui and hasattr(self.ui, 'shop') and self.ui.shop: 
-            self.ui.shop.unlock_level(self.current_level_index + 1)
         
-        if self.current_level_index < 6:
-            self.load_level(self.current_level_index + 1)
-        else:
-            self.victory = True 
+        # Lưu tiến độ - mở khóa màn tiếp theo
+        if self.ui and hasattr(self.ui, 'shop') and self.ui.shop: 
+            next_level = self.current_level_index + 1
+            success, msg = self.ui.shop.unlock_level(next_level)
+            if success:
+                print(f"✓ Unlocked Level {next_level}!")
+            else:
+                print(f"Level {next_level} {msg}")
+        
+        # Hiển thị màn hình chiến thắng
+        self.victory = True 
 
     def update_player_physics(self, keys):
         p = self.player
