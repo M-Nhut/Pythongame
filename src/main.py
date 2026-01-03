@@ -6,7 +6,6 @@ from gameplay import Gameplay
 pygame.init()
 SCREEN_SIZE = (800, 380) 
 screen = pygame.display.set_mode(SCREEN_SIZE)
-pygame.display.set_caption("My Game")
 clock = pygame.time.Clock()
 
 shop = DummyShop()
@@ -22,7 +21,6 @@ previous_ui_state = "menu"
 while running:
     keys = pygame.key.get_pressed()
     
-    
     ui._handle_events()
     if not ui.running:
         running = False
@@ -33,6 +31,16 @@ while running:
 
 
     if ui.state == "menu":
+        should_reset = (
+            previous_ui_state in ["playing", "pause"] or  
+            game.game_over or  
+            game.victory
+        )
+        if should_reset:
+            game.load_level(1)
+            game.lives = game.max_lives  
+            game.game_over = False
+            game.victory = False
         ui.draw_menu()
 
     elif ui.state == "level_select":
@@ -42,7 +50,6 @@ while running:
         if previous_ui_state != "playing":
             game.internal_state = "SELECT"
             
-        # Check pause
         if keys[pygame.K_ESCAPE]:
             ui.state = "pause"
         else:
@@ -63,10 +70,10 @@ while running:
              ui.draw_hud()
         ui.draw_pause()
 
-    
     previous_ui_state = ui.state
 
     pygame.display.flip()
     clock.tick(60)
 
+shop.save_state()
 pygame.quit()
