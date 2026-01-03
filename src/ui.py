@@ -212,13 +212,7 @@ class GameUI:
             
             # Text
             level_text = BIGFONT.render(str(i), True, text_color)
-            self.screen.blit(level_text, level_text.get_rect(center=rect.center))
-            
-            # Vẽ icon khóa nếu chưa mở
-            if not is_unlocked:
-                lock_text = FONT.render("🔒", True, (200, 200, 200))
-                self.screen.blit(lock_text, (rect.centerx - 10, rect.centery + 20))
-            
+            self.screen.blit(level_text, level_text.get_rect(center=rect.center))  
             # Tạo button nếu unlocked
             if is_unlocked:
                 btn = Button(rect, "", lambda lv=i: self._start_level(lv), bg_color=bg_color)
