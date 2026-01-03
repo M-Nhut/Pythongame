@@ -34,8 +34,8 @@ class Player:
             run_sheet = SpriteSheet(run_path)
             self.anims["run"] = Animation(run_sheet.get_animation(0, 0, 32, 32, 12, size))
 
-        # Các hành động còn lại (Jump, Fall, Hit, v.v.)
-        for action in ["Jump", "Fall", "Hit", "Double Jump", "Wall Jump"]:
+        # Các hành động còn lại (Jump, Fall, Hit)
+        for action in ["Jump", "Fall", "Hit"]:
             action_path = f"{folder}/{action} (32x32).png"
             if os.path.exists(action_path):
                 img = pygame.image.load(action_path).convert_alpha()
